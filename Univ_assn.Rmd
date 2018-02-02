@@ -1,0 +1,162 @@
+---
+title: "Linear Modeling"
+author: "Casey Conrad"
+date: "1/31/2018"
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
+  chunk_output_type: inline
+---
+```{r}
+trees = read.csv('./data/treedata.csv')
+```
+
+1.  First the two species, Acer rubrum and Abies fraseri, were pulled out of the full dataset, using "spcode". 
+
+```{r}
+tree_af = trees[trees$spcode == "ABIEFRA",]
+tree_ar = trees[trees$spcode == "ACERRUB",]
+```
+
+A full model was made for each species, with ground cover as a response variable and all possible explanitory variables in order to determine which ones were statistically significant. 
+
+```{r}
+af_mod_full = lm(cover ~ elev + streamdist + tci + disturb + beers + utme + utmn, data = tree_af)
+summary(af_mod_full)
+```
+
+The summary for the full model of Abies fraseri shows variables 'elev', 'tci', 'beers', and 'utmn' as being statistically significant, however, the first two have much higher t values, so they were selected for the next model
+
+```{r}
+af_mod2 = lm(cover ~ elev + tci, data = tree_af)
+summary(af_mod2)
+plot(af_mod2)
+```
+
+The summary for the full model of Acer rubrum shows variables 'beers', 'elev', 'streamdist', and 'utmn' as being statistically significant, but the last three to a much lesser extent. Each of these were then used in the next model.
+
+```{r}
+ar_mod_full = lm(cover ~ elev + streamdist + tci + disturb + beers + utme + utmn, data = tree_ar)
+summary(ar_mod_full)
+```
+
+```{r}
+ar_mod = lm(cover ~ beers + elev + streamdist, data = tree_ar)
+summary(ar_mod)
+plot(ar_mod)
+```
+
+Even with only the most significant variable 'beers' doesn't seem to be a very good predictor of ground cover. 
+
+```{r}
+ar_mod2 = lm(cover ~ beers, data = tree_ar)
+summary(ar_mod2)
+plot(ar_mod2)
+```
+
+The difference in the explanatory power of each model can likely be attributed to the difference in habitat preference between the two species. Abies fraseri is a habitat specialist so the explanatory varaiables describing places where its found have an effect on its abundance in those habitats. 
+
+Acer rubrum, as a generalist, is less dependent on the characteristics of a given area, thus its abundance shows less of a pattern, regardless of features of any given habitat.
+
+Multiple R-squared is the percentage of the response variable explained by the model and its much higher in the model for Abies fraseri. Variance for this species is better epxplained by the model, where varience for Acer rubrum cannot be explained by the model.
+
+
+
+2.)
+```{r}
+af_glm_full = glm(cover ~ elev + streamdist + tci + disturb + beers + utme + utmn, data = tree_af, family = 'poisson')
+summary(af_glm_full)
+```
+
+```{r}
+plot(af_glm_full)
+```
+
+Once again, 'elev' and 'tci' had p-values much lower than the rest of the variables. 
+
+```{r}
+af_glm2 = glm(cover ~ elev + tci, data = tree_af, family = 'poisson')
+summary(af_glm2)
+```
+
+```{r}
+plot(af_glm2)
+```
+
+```{r}
+ar_glm_full = glm(cover ~ elev + streamdist + tci + disturb + beers + utme + utmn, data = tree_ar, family = 'poisson')
+summary(ar_glm_full)
+```
+
+```{r}
+plot(ar_glm_full)
+```
+
+
+Once again, 'beers' was the most statistically significant, so it was the only one used in the revised glm.
+
+```{r}
+ar_glm2 = glm(cover ~ beers, data = tree_ar, family = 'poisson')
+summary(ar_glm2)
+```
+
+```{r}
+plot(ar_glm2)
+```
+
+```{r}
+pseudo_r2_af = function(af_glm2) {
+  1 - af_glm2$deviance / af_glm2$null.deviance}
+pseudo_r2_af(af_glm2)
+```
+
+```{r}
+pseudo_r2_ar = function(ar_glm2) {
+  1 - ar_glm2$deviance / ar_glm2$null.deviance}
+pseudo_r2_ar(ar_glm2)
+```
+
+The variance in the model for Abies fraseri is much better explained by the model than the variance in that of Acer rubrum. 
+
+```{r}
+anova(af_mod2, af_glm2)
+```
+
+Running anova on the two models for Abies fraseri shows the residual sum of squares (RSS) is much lower in the general linear model, thus it is stronger. 
+
+```{r}
+anova(ar_mod2, ar_glm2)
+```
+
+Anova on the two Acer rubrum models shows the GLM was also a better model, but neither are very strong. 
+
+
+
+3.)   One can only use explainatory variables to predict an outcome when correlations exist between them. Predicting the abundance of any given species based on habitat characteristics is near impossible if it shows no preference for one type of habitat over another. Even when a particular species does show preference for a certain type of habitat, certain variables are obviously more important than others and knowing all the characteristics of a given habitat is not necessarily helpful unless you can weight their predictive power. 
+
+
+
+4.)
+```{r}
+step(af_mod_full)
+```
+
+```{r}
+step(af_glm_full)
+```
+
+Interestingly, the step function on the full OLS model for Abies fraseri didn't pull out any of the variables, yet on the GLM it reached the same conclusion that only 'elev', 'tci', and 'beers' were significant. 
+```{r}
+step(ar_mod_full)
+```
+
+```{r}
+step(ar_glm_full)
+```
+
+Step functions on the two Acer rubrum models ended with the same explanatory variables, however, the AIC values for the GLM are much higher, thus it is a weaker model. 
+
+
+
+5.)   I haven't the foggiest. 
